@@ -1,0 +1,65 @@
+---
+title: "Supervised ML - Regression"
+date: today()
+output: 
+    html_document:
+        toc: TRUE
+        theme: flatly
+        highlight: tango
+        code_folding: hide
+        df_print: paged
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+    echo = TRUE,
+    message = FALSE,
+    warning = FALSE
+    )
+```
+
+# Challenge Summary
+
+In this session we did not use the recipes packages to prepare our data. This is going to be your challenge. For further information take a look at the last session or just use google. Prepare the data for the models with the steps provided below. Remember, you don’t need to set the flags by yourself (see all_nominal()).
+
+# Libraries
+
+Load the following libraries. 
+
+
+```{r}
+# install.packages("plotly")
+
+library(tidyverse)
+library(tidyquant)
+library(broom)
+library(umap)
+library(ggrepel) # Addon for ggplot, so that the labels do not overlap
+
+# Modeling
+library(parsnip)
+
+# Preprocessing & Sampling
+library(recipes)
+library(rsample)
+
+# Modeling Error Metrics
+library(yardstick)
+
+# Plotting Decision Trees
+library(rpart.plot)
+```
+
+
+# Data
+
+```{r}
+
+# Data set
+bike_data_tbl <- readRDS("bike_orderlines.rds")
+bike_data_tbl
+```
+
+
+
+Congratulations! You are done with the 2nd challenge!

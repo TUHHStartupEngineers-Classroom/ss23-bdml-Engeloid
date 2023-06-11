@@ -1,0 +1,14 @@
+{
+  "hash": "f987fa9c4f84f3525a1086701ebc5161",
+  "result": {
+    "markdown": "---\ntitle: \"Supervised ML - Regression\"\ndate: today()\noutput: \n    html_document:\n        toc: TRUE\n        theme: flatly\n        highlight: tango\n        code_folding: hide\n        df_print: paged\n---\n\n\n\n\n# Challenge Summary\n\nIn this session we did not use the recipes packages to prepare our data. This is going to be your challenge. For further information take a look at the last session or just use google. Prepare the data for the models with the steps provided below. Remember, you don’t need to set the flags by yourself (see all_nominal()).\n\n# Libraries\n\nLoad the following libraries. \n\n\n\n::: {.cell hash='Regression_cache/html/unnamed-chunk-1_206076917ec4e8f185257b0b3ab543a2'}\n\n```{.r .cell-code}\n# install.packages(\"plotly\")\n\nlibrary(tidyverse)\nlibrary(tidyquant)\nlibrary(broom)\nlibrary(umap)\nlibrary(ggrepel) # Addon for ggplot, so that the labels do not overlap\n\n# Modeling\nlibrary(parsnip)\n\n# Preprocessing & Sampling\nlibrary(recipes)\nlibrary(rsample)\n\n# Modeling Error Metrics\nlibrary(yardstick)\n\n# Plotting Decision Trees\nlibrary(rpart.plot)\n```\n:::\n\n\n\n# Data\n\n\n::: {.cell hash='Regression_cache/html/unnamed-chunk-2_54c2aa13fa0ab9fe0aaf1321fa46f799'}\n\n```{.r .cell-code}\n# Data set\nbike_data_tbl <- readRDS(\"bike_orderlines.rds\")\nbike_data_tbl\n```\n\n::: {.cell-output .cell-output-stdout}\n```\n# A tibble: 15,644 × 18\n   order_id order_line order_date          model           model_year category_1\n      <dbl>      <dbl> <dttm>              <chr>                <dbl> <chr>     \n 1        1          1 2015-01-07 00:00:00 Spectral CF 7 …       2021 Mountain  \n 2        1          2 2015-01-07 00:00:00 Ultimate CF SL…       2020 Road      \n 3        2          1 2015-01-10 00:00:00 Neuron CF 8           2021 Mountain  \n 4        2          2 2015-01-10 00:00:00 Speedmax CF 7.0       2019 Road      \n 5        3          1 2015-01-10 00:00:00 Stitched 360 P…       2020 Mountain  \n 6        3          2 2015-01-10 00:00:00 Roadlite CF 7.0       2020 Hybrid / …\n 7        3          3 2015-01-10 00:00:00 Speedmax WMN C…       2020 Road      \n 8        3          4 2015-01-10 00:00:00 Inflite 5             2021 Road      \n 9        3          5 2015-01-10 00:00:00 Torque CF 8.0         2020 Mountain  \n10        4          1 2015-01-11 00:00:00 Ultimate CF SL…       2020 Road      \n# ℹ 15,634 more rows\n# ℹ 12 more variables: category_2 <chr>, category_3 <chr>, price <dbl>,\n#   quantity <dbl>, total_price <dbl>, frame_material <chr>, weight <dbl>,\n#   url <chr>, bikeshop <chr>, location <chr>, lat <dbl>, lng <dbl>\n```\n:::\n:::\n\n\n\n\nCongratulations! You are done with the 2nd challenge!",
+    "supporting": [],
+    "filters": [
+      "rmarkdown/pagebreak.lua"
+    ],
+    "includes": {},
+    "engineDependencies": {},
+    "preserve": {},
+    "postProcess": true
+  }
+}
