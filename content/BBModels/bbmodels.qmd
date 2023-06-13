@@ -1,0 +1,237 @@
+---
+title: "Supervised ML - Regression"
+date: "2023-06-12"
+output: 
+    html_document:
+        toc: TRUE
+        theme: flatly
+        highlight: tango
+        code_folding: hide
+        df_print: paged
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+    echo = TRUE,
+    message = FALSE,
+    warning = FALSE
+    )
+```
+
+# Challenge Summary
+
+This is a two part challenge:
+
+Part 1: Recreate plot_features(). Take the explanation data and use the first case to create a plot similar to the output of plot_features().
+
+explanation %>% 
+  as.tibble()
+  
+case_1 <- explanation %>%
+    filter(case == 1)
+
+case_1 %>%
+    plot_features()
+You will need at least the layers geom_col() and coord_flip().
+
+Bonus Objectives:
+
+Get your custom plot_features() function to scale to multiple cases
+Use theme arguments to modify the look of the plot
+Part 2: Recreate plot_explanations():
+
+Take the full explanation data and recreate the second plot.
+
+You will need at least the layers geom_tile() and facet_wrap().
+
+# Libraries
+
+Load the following libraries. 
+
+
+```{r}
+# install.packages("plotly")
+
+library(tidyverse)
+library(tidyquant)
+library(broom)
+library(umap)
+library(ggrepel) # Addon for ggplot, so that the labels do not overlap
+library(h2o)
+library(lime)
+
+# Modeling
+library(parsnip)
+
+# Preprocessing & Sampling
+library(recipes)
+library(rsample)
+
+# Modeling Error Metrics
+library(yardstick)
+
+# Plotting Decision Trees
+library(rpart.plot)
+```
+
+
+# Data
+
+```{r}
+
+# Data set
+
+product_tbl <- read_csv("product_backorders.csv")
+glimpse(product_tbl)
+product_proc_tbl <- product_tbl %>%
+  mutate_if(is.character, as.factor)
+
+split_product_tbl <- initial_split(product_proc_tbl, prop = 0.8)
+train_tbl <- training(split_product_tbl)
+test_tbl <- testing(split_product_tbl)
+```
+
+## Specify the response and predictor variables
+```{r}
+recipe_product <- 
+  recipe(went_on_backorder ~ ., data = train_tbl) %>%
+  step_zv(all_predictors()) %>%
+  update_role(sku, new_role = "ID") %>%
+  prep()
+
+train_bake <- bake(recipe_product, new_data = train_tbl)
+test_bake <- bake(recipe_product, new_data = test_tbl)
+
+```
+## AutoML
+```{r beginH2o, cache.rebuild = TRUE}
+h2o.init()
+
+split_h2o <- h2o.splitFrame(as.h2o(train_bake), ratios = c(0.8), seed = 2597)
+train_h2o <- split_h2o[[1]]
+valid_h2o <- split_h2o[[2]]
+test_h2o <- as.h2o(test_bake)
+
+y <- "went_on_backorder"
+x <- setdiff(names(train_h2o), y)
+
+leader_h2o <- h2o.loadModel("../Models/StackedEnsemble_AllModels_1_AutoML_1_20230613_132849")
+
+```
+
+# Challenge
+
+```{r}
+predictions_tbl <- leader_h2o %>% 
+    h2o.predict(newdata = test_h2o) %>%
+    as.tibble() %>%
+    bind_cols(
+        test_tbl %>%
+            select(sku, went_on_backorder )
+    )
+```
+## Explainer
+```{r}
+explainer <- train_tbl %>%
+    select(-went_on_backorder) %>%
+    lime(
+        model           = leader_h2o,
+        bin_continuous  = TRUE,
+        n_bins          = 4,
+        quantile_bins   = TRUE
+    )
+explainer
+```
+
+```{r}
+explanation <- test_tbl %>%
+    slice(1) %>%
+    select(-went_on_backorder) %>%
+    lime::explain(
+    
+        # Pass our explainer object
+        explainer = explainer,
+        # Because it is a binary classification model: 1
+        n_labels   = 1,
+        # number of features to be returned
+        n_features = 8,
+        # number of localized linear models
+        n_permutations = 5000,
+        # Let's start with 1
+        kernel_width   = 1
+    )
+
+explanation
+```
+
+```{r}
+explanation %>%
+    as.tibble() %>%
+    select(feature:prediction) 
+```
+
+## plot_features
+
+```{r}
+plot_features <- function(explanation) {
+  ggplot(explanation) +
+  geom_col(aes(feature_desc %>% 
+                 str_replace_all(pattern = "_", replacement = " ") %>% 
+                 str_to_title(),
+               feature_weight,
+               fill = factor(sign(feature_weight)))) +
+  coord_flip() +
+  scale_fill_discrete(name = "Influence", labels = c("Contradicts", "Supports")) +
+  theme(legend.position="bottom") +
+  labs(
+    title = "Weighting of features",
+    subtitle = paste("Probability:",
+                     as.character(round(unique(explanation$label_prob),4)),
+                     "\nExplanation Fit:",
+                     as.character(round(unique(explanation$model_r2),4)) ),
+    x = "Weight",
+    y = "Feature",
+  )
+}
+```
+
+```{r}
+plot_features(explanation)
+```
+
+## plot_explanations
+
+```{r}
+explanation <- test_tbl %>%
+    slice(1:20) %>%
+    select(-went_on_backorder) %>%
+    lime::explain(
+        explainer = explainer,
+        n_labels   = 1,
+        n_features = 8,
+        n_permutations = 5000,
+        kernel_width   = 0.5
+    )
+
+```
+
+```{r}
+plot_explanations <- function(explanation, slicesize = 20) {
+  ggplot(explanation) +
+  geom_tile(aes(factor(case, levels = 1:slicesize),
+                feature_desc %>% 
+                 str_replace_all(pattern = "_", replacement = " ") %>% 
+                 str_to_title(),
+                fill = feature_weight)) +
+  facet_wrap(~ label) +
+  scale_fill_continuous(name = "Feature\nWeight") +
+  labs(
+    x = "Case",
+    y = "Feature"
+  )
+}
+plot_explanations(explanation, 20)
+```
+
+
+Congratulations! You are done with the 6th challenge!

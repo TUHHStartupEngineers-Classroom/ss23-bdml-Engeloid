@@ -1,0 +1,177 @@
+---
+title: "Automated ML with H20 I"
+date: "2023-06-12"
+output: 
+    html_document:
+        toc: TRUE
+        theme: flatly
+        highlight: tango
+        code_folding: hide
+        df_print: paged
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+    echo = TRUE,
+    message = FALSE,
+    warning = FALSE
+    )
+```
+
+# Challenge Summary
+
+Use your learning from descriptive features and plot_ggpairs() to further investigate the features. Run the functions above according to the features needed. Answer the following questions. Most of the time, you will only need the images from diagonal.
+
+# Libraries
+
+Load the following libraries. 
+
+
+```{r}
+# install.packages("plotly")
+
+library(tidyverse)
+library(tidyquant)
+library(broom)
+library(umap)
+library(ggrepel) # Addon for ggplot, so that the labels do not overlap
+
+library(readxl)
+library(skimr)
+library(GGally)
+
+```
+
+# Helper functions
+
+
+```{r}
+plot_ggpairs <- function(data, color = NULL, density_alpha = 0.5) {
+  
+  color_expr <- enquo(color)
+  if (rlang::quo_is_null(color_expr)) {
+    
+    g <- data %>%
+      ggpairs(lower = "blank") 
+    
+  } else {
+    
+    color_name <- quo_name(color_expr)
+    g <- data %>%
+      ggpairs(mapping = aes_string(color = color_name), 
+              lower = "blank", legend = 1,
+              diag = list(continuous = wrap("densityDiag", 
+                                            alpha = density_alpha))) +
+      theme(legend.position = "bottom")
+  }
+  
+  return(g)
+}
+```
+
+# Data
+
+```{r}
+employee_attrition_tbl <- read_csv("datasets-1067-1925-WA_Fn-UseC_-HR-Employee-Attrition.csv")
+employee_attrition_tbl
+```
+
+## Compensation Features
+
+### Interaction between Monthly Income and Attrition
+
+The Answer would be C, because we see the Spike below 5000 with Yes.
+```{r}
+employee_attrition_tbl %>%
+    select(Attrition, MonthlyIncome) %>%
+    plot_ggpairs(Attrition)
+```
+
+### Interaction between Percent Salary Hike and Attrition
+
+The answer would be D, because the graphs for Yes and No are largely similar.
+```{r}
+employee_attrition_tbl %>%
+    select(Attrition, PercentSalaryHike) %>%
+    plot_ggpairs(Attrition)
+```
+
+### Interaction between Stock Option Level and Attrition
+
+The Answer would be B or C, because we can see that the majority of the people with 1 or 2 Stock Options are staying, but with 3 Stock Options they are the same and 0 Stock Options the would more likely have Attrition.
+```{r}
+employee_attrition_tbl %>%
+    select(Attrition, StockOptionLevel) %>%
+    plot_ggpairs(Attrition)
+```
+
+## Survey Results
+
+### Interaction between Environment Satisfaction and Attrition
+
+The Answer would be C, because the Graph for Attrition Yes is similar in all levels of satisfaction.
+
+```{r}
+employee_attrition_tbl %>%
+    select(Attrition, EnvironmentSatisfaction) %>%
+    plot_ggpairs(Attrition)
+```
+
+### Interaction between Work Life Balance and Attrition
+
+The answer would be B and C, because we can see the spikes of 2's and 3's for both Yes and No
+```{r}
+employee_attrition_tbl %>%
+    select(Attrition, WorkLifeBalance) %>%
+    plot_ggpairs(Attrition)
+```
+## Performance Data
+
+### Interaction between Job Involvement and Attrition
+
+The answer would be between A and B because the lower density happens at the 1's and 4's.
+```{r}
+employee_attrition_tbl %>%
+    select(Attrition, JobInvolvement) %>%
+    plot_ggpairs(Attrition)
+```
+## Work-Life Features
+
+### Interaction between Over Time and Attrition
+
+The answer would be B, because we can see that the red portion is larger than the blue portion.
+```{r}
+employee_attrition_tbl %>%
+    select(Attrition, OverTime) %>%
+    plot_ggpairs(Attrition)
+```
+## Training and Education
+
+### Interaction between Training Times Last Year and Attrition
+
+The answer is C, because both graphs for Yes and No are similar.
+```{r}
+employee_attrition_tbl %>%
+    select(Attrition, TrainingTimesLastYear) %>%
+    plot_ggpairs(Attrition)
+```
+## Time-Based Features
+
+### Interaction between Years At Company and Attrition
+
+The answer would be B, which we can the on the spike at the beginning of the graph for Years < 10.
+```{r}
+employee_attrition_tbl %>%
+    select(Attrition, YearsAtCompany) %>%
+    plot_ggpairs(Attrition)
+```
+### Interaction between Years Since Last Promotion and Attrition
+
+The answer would be C, because both graphs are similar, just with Yes having a bigger spike at the beginning.
+```{r}
+employee_attrition_tbl %>%
+    select(Attrition, YearsSinceLastPromotion) %>%
+    plot_ggpairs(Attrition)
+```
+
+Congratulations! You are done with the 3rd challenge!
