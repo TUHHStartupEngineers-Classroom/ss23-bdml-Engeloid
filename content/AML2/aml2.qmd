@@ -1,0 +1,159 @@
+---
+title: "Automated ML with H20 II"
+date: "2023-06-12"
+output: 
+    html_document:
+        toc: TRUE
+        theme: flatly
+        highlight: tango
+        code_folding: hide
+        df_print: paged
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+    echo = TRUE,
+    message = FALSE,
+    warning = FALSE
+    )
+```
+
+# Challenge Summary
+
+For the challenge, we shall be working with a Product Backorders dataset. The goal here is to predict whether or not a product will be put on backorder status, given a number of product metrics such as current inventory, transit time, demand forecasts and prior sales. It’s a classic Binary Classification problem. The dataset can be accessed from here:
+
+# Libraries
+
+Load the following libraries. 
+
+
+```{r}
+# install.packages("plotly")
+
+library(tidyverse)
+library(tidyquant)
+library(broom)
+library(umap)
+library(ggrepel) # Addon for ggplot, so that the labels do not overlap
+library(readxl)
+
+# Preprocessing & Sampling
+library(recipes)
+library(rsample)
+
+library(skimr)
+library(GGally)
+
+library(h2o)
+```
+
+# Helper functions
+
+
+```{r}
+extract_h2o_model_name_by_position <- function(h2o_leaderboard, n = 1, verbose = T) {
+  
+  model_name <- h2o_leaderboard %>%
+    as.tibble() %>%
+    slice(n) %>%
+    pull(model_id)
+  
+  if (verbose) message(model_name)
+  
+  return(model_name)
+  
+}
+```
+
+# Data
+
+```{r}
+
+# Data set
+product_tbl <- read_csv("product_backorders.csv")
+glimpse(product_tbl)
+
+```
+
+## Loading and Splitting
+```{r}
+
+product_proc_tbl <- product_tbl %>%
+  mutate_if(is.character, as.factor)
+
+split_product_tbl <- initial_split(product_proc_tbl, prop = 0.8)
+train_tbl <- training(split_product_tbl)
+test_tbl <- testing(split_product_tbl)
+```
+
+## Specify the response and predictor variables
+```{r}
+# Try Ctrl+Shift+F10, if a cache error occurs
+recipe_product <- 
+  recipe(went_on_backorder ~ ., data = train_tbl) %>%
+  step_zv(all_predictors()) %>%
+  update_role(sku, new_role = "ID") %>%
+  prep()
+
+train_bake <- bake(recipe_product, new_data = train_tbl)
+test_bake <- bake(recipe_product, new_data = test_tbl)
+```
+## run AutoML specifying the stopping criterion
+```{r h2o_begin, cache.rebuild = TRUE}
+h2o.init()
+
+split_h2o <- h2o.splitFrame(as.h2o(train_bake), ratios = c(0.8), seed = 2597)
+train_h2o <- split_h2o[[1]]
+valid_h2o <- split_h2o[[2]]
+test_h2o <- as.h2o(test_bake)
+
+y <- "went_on_backorder"
+x <- setdiff(names(train_h2o), y)
+
+```
+
+```{r}
+automl_models_h2o <- h2o.automl(
+  x = x,
+  y = y,
+  training_frame    = train_h2o,
+  validation_frame  = valid_h2o,
+  leaderboard_frame = test_h2o,
+  max_runtime_secs  = 30,
+  nfolds            = 5 
+)
+```
+
+## View the leaderboard and Save best Model
+```{r saveLeader}
+h2o_leaderboard <- automl_models_h2o@leaderboard
+#h2o_leaderboard %>% 
+#  extract_h2o_model_name_by_position(4) %>% 
+#  h2o.getModel() %>%
+#  h2o.saveModel(path = "../Models", force = TRUE)
+h2o_leaderboard
+```
+
+## Predicting using Leader Model
+```{r}
+prediction_tbl <- 
+  h2o_leaderboard %>% 
+  extract_h2o_model_name_by_position(1) %>% 
+  h2o.getModel() %>% 
+  h2o.predict(newdata = test_h2o) %>%
+  as.tibble()
+
+test_bake <- test_bake %>%
+  mutate("ID" = row_number())
+
+prediction_tbl <- prediction_tbl %>%
+  mutate("ID" = row_number()) %>%
+  left_join(test_bake) %>%
+  select(-ID)
+
+prediction_tbl
+
+h2o.shutdown(prompt = FALSE)
+```
+
+Congratulations! You are done with the 4th challenge!

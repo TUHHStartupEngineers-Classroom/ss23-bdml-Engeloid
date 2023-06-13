@@ -1,6 +1,6 @@
 ---
 title: "ML Fundamentals Company Segmentation"
-date: today()
+date: "2023-06-12"
 output: 
     html_document:
         toc: TRUE

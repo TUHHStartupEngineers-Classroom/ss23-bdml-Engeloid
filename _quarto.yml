@@ -19,15 +19,15 @@ website:
           - text: "Supervised ML - Regression 02"
             file: content/SMLReg2/Regression.qmd
           - text: "Automated ML 01"
-            file: content/SMLReg2/Regression.qmd
+            file: content/AML1/aml1.qmd
           - text: "Automated ML 02"
-            file: content/SMLReg2/Regression.qmd
+            file: content/AML2/aml2.qmd
           - text: "Performance Measures"
-            file: content/SMLReg2/Regression.qmd
+            file: content/PM/pmeasures.qmd
           - text: "Black Box Models"
-            file: content/SMLReg2/Regression.qmd
+            file: content/BBModels/bbmodels.qmd
           - text: "Deep Learning"
-            file: content/SMLReg2/Regression.qmd
+            file: content/DL/deepL.qmd
       - text: "Class notes"
         file: content/02_notes/05_class_notes.qmd
       - text: "Links"
